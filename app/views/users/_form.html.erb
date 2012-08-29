@@ -23,7 +23,9 @@
 
 <p>
   <b>Timezone</b><br />
-  <%= time_zone_select 'user', :time_zone, ActiveSupport::TimeZone.all, {},{:style => "width:330px;"} %>
+   (GMT+07:00) Hanoi
+  <%= hidden_field 'user', 'time_zone', :value => 'Hanoi'%>
+  <%#= time_zone_select 'user', :time_zone, ActiveSupport::TimeZone.all, {},{:style => "width:330px;"} %>
 </p>
 
 <% if logged_in? && current_user.admin? -%>

@@ -7,6 +7,7 @@ class ProjectConfiguration < ConfigurationParameter
   # default templates for Projects
   def self.templates
     {
+      'magento' => Webistrano::Template::Magento,
       'rails' => Webistrano::Template::Rails,
       'mongrel_rails' => Webistrano::Template::MongrelRails,
       'thin_rails' => Webistrano::Template::ThinRails,   

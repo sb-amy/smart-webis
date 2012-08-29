@@ -1,6 +1,7 @@
 <div class="special_box">
   <div class="special_box_top"></div>
   <div class="special_box_middle deployments_box">
+   <% if current_user.admin? %>
    <p><%= link_to 'Deploy', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy', :class => 'arrow_link' %></p>
    <p><%= link_to 'Deploy and migrate', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy:migrations', :class => 'arrow_link' %></p>
    <p><%= link_to 'Restart app servers', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy:restart', :class => 'arrow_link' %></p>
@@ -14,6 +15,10 @@
      <%= link_to 'Info', tasks_project_stage_path(current_project, @stage), :class => 'arrow_link',
          :onclick => "location.href='#{tasks_project_stage_path(current_project, @stage)}#' + $F('task'); return false" %>
    </p>
+   <%else%>
+   <p><%= link_to 'Deploy', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy', :class => 'arrow_link' %></p>
+   <p><%= link_to 'Rollback', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy:rollback', :class => 'arrow_link' %></p>
+   <%end%>
     </div>
   <div class="special_box_bottom"></div>
 </div>
@@ -38,9 +43,11 @@
 		  <%=h @stage.hosts.count %>
 		</p>
 		<br />
+		<% if current_user.admin? %>
 		<%= link_to 'Edit stage', edit_project_stage_path(current_project, @stage), :class => 'arrow_link' %> | 
 		<%= link_to 'Delete stage', project_stage_path(current_project, @stage), :confirm => 'Are you sure?', :method => :delete, :class => 'arrow_link'  %> | 
 		<%= link_to 'Export capfile', {:action => 'capfile', :project_id => current_project, :id => @stage}, {:onclick => "loadWindow('#{url_for(:action => 'capfile', :project_id => current_project, :id => @stage)}'); return false", :class => 'arrow_link'} %>
+		<%end%>
 	</div>	
   <div class="box_bottom"></div>
 </div>
@@ -48,7 +55,7 @@
 
 <div class="clear"></div>
 <br>
-
+<% if current_user.admin? %>
 <fieldset class="fieldset">
   <legend>Stage specific configuration</legend>
   <%= render(:partial => 'configs')%>
@@ -81,7 +88,7 @@
 </fieldset>
 
 <br /><br />
-
+<%end%>
 <fieldset class="fieldset">
   <legend>Recent deployment history</legend>
   <%= render(:partial => 'deployments')%>

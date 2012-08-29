@@ -4,6 +4,7 @@
                                              :status => controller_in_use_or(ProjectsController, :open, Project), 
                                              :path => projects_path } )%>
 
+<% if current_user.admin? %>
 <%= render(:partial => 'layouts/menu_box', :locals => {
                                              :box_type => 'hosts', 
                                              :status => controller_in_use_or(HostsController, :open, Host), 
@@ -18,5 +19,5 @@
                                              :box_type => 'users', 
                                              :status => controller_in_use_or(UsersController, :closed, User), 
                                              :path => users_path } )%>
-
+<%end%>
 

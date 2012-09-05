@@ -43,7 +43,7 @@ module Capistrano
               run "cp -RPp #{repository_cache} #{configuration[:release_path]} && #{mark}"
             else
               exclusions = copy_exclude.map { |e| "--exclude=\"#{e}\"" }.join(' ')
-              run "rsync -lrpt #{exclusions} #{repository_cache}/* #{configuration[:release_path]} && #{mark}"
+              run "rsync -lrpt #{exclusions} #{repository_cache}/ #{configuration[:release_path]} && #{mark}"
             end
           end
           

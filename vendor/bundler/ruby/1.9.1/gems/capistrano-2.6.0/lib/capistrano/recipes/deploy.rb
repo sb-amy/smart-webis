@@ -424,7 +424,7 @@ namespace :deploy do
     for your environment, set the :use_sudo variable to false instead.
   DESC
   task :cleanup, :except => { :no_release => true } do
-    count = fetch(:keep_releases, 5).to_i
+    count = fetch(:keep_releases, 2).to_i
     if count >= releases.length
       logger.important "no old releases to clean up"
     else

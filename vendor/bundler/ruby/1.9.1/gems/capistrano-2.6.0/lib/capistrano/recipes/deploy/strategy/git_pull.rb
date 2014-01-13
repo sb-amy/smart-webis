@@ -8,7 +8,7 @@ module Capistrano
       # the source code on each remote server. Each deploy simply updates the
       # cached checkout, and then does a copy from the cached copy to the
       # final deployment location.
-      class RemoteCache < Remote
+      class GitPull < Remote
         # Executes the SCM command for this strategy and writes the REVISION
         # mark file to each host.
         def deploy!

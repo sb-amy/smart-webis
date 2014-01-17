@@ -1,155 +1,119 @@
-#after   'deploy:update_code', 'magento:setpermissions'
-#after   'deploy:update_code', 'magento:setconfiguration'
-#after   'deploy:update_code', 'magento:symlink'
-#after   'deploy:symlink', 'magento:clearcache'
-#after   'deploy', 'deploy:cleanup'
+after   'deploy:update_code', 'magento:clearcache'
+
+_cset(:web_dir)     { File.join(deploy_to, "web") }
+_cset(:upload_dir)     { File.join(deploy_to, "private", "upload") }
+_cset(:config_dir)     { File.join(deploy_to, "private", "config") }
 
 def remote_file_exists?(full_path)
   'true' ==  capture("if [ -e #{full_path} ]; then echo 'true'; fi").strip
 end
 
 namespace :deploy do
-  desc "Set up the expected application directory structure on all boxes"
+  desc "Override default"
+  task :finalize_update, :roles => [:app] do
+    logger.trace "finalize_update: Do nothing"
+  end
+
+  desc "Process symlink"
+  task :symlink, :roles => [:app] do
+    run "rm -rf #{web_dir}/media"
+    run "ln -nfs #{config_dir}/media #{web_dir}/media"    
+    
+    run "ln -nfs #{config_dir}/local.xml #{web_dir}/app/etc/local.xml"
+    
+    run "rm -rf #{web_dir}/var"
+    run "ln -nfs #{config_dir}/var #{web_dir}/var"
+  end
+
+  desc "Create ssh key and neccessary folders"
+  task :init, :roles => [:app] do
+    run "mkdir -p #{upload_dir} #{config_dir}"
+    magento.getsshpublickey
+  end
+
+  desc "Checkout code from Git, do DB import and prepare environment for Magento"
   task :setup, :roles => [:app] do
-    run "cd #{deploy_to}/web && git init && git remote add origin #{repository} && git fetch -q"
+    logger.trace "Initializing Git..."
+    run "cd #{web_dir} && git init && git remote add origin #{repository} && git fetch -q"
+    deploy.update_code
+    magento.init_files
+    magento.restore_db
+    magento.update_config
   end
 end
-
 
 namespace :magento do
-  desc "Copy media, local.xml, .htaccess from existing Magento installation to shared directory."   
-  task :save_existing_magento, :roles => [:app] do
-    run "cp -Rfp #{current_path}/media #{shared_path}/"
-    run "chmod -R a+w #{shared_path}/media"
-    run "cp #{current_path}/app/etc/local.xml #{shared_path}/config/app/etc/local.xml"
-	run "cp #{current_path}/.htaccess #{shared_path}/config/htaccess"
-
-    fetch(:custom_shared_dirs, "").split(",").each do |link|
-		if remote_file_exists?("#{current_path}/#{link}")
-      		run "cp -rT #{current_path}/#{link} #{shared_path}/#{link}"
-		end
-    end  
-    fetch(:custom_shared_files, "").split(",").each do |link|
-		if remote_file_exists?("#{current_path}/#{link}")
-      		run "cp -T #{current_path}/#{link} #{shared_path}/#{link}"
-		end
-    end
-  end
-
-  desc "Deletes the /app/etc/local.xml file." 
-  task :delete_local_xml, :roles => [:app] do 
-          run "rm #{current_path}/app/etc/local.xml"
-  end 
-
-  desc "Saves the local /app/etc/local.xml file to shared directory. Do not run this unless you have first deleted and ran the install wizard." 
-  task :save_local_xml, :roles => [:app] do 
-          run "cp #{current_path}/app/etc/local.xml #{shared_path}/config/app/etc/local.xml"
-  end 
-
-  desc "Saves the local /app/etc/use_cache.ser file to shared directory. The builder must have privilege to the shared directory." 
-  task :save_use_cache_ser, :roles => [:app] do 
-          run "cp #{current_path}/app/etc/use_cache.ser #{shared_path}/config/app/etc/"
-  end 
-
-  desc "Change rights on folders" 
-  task :setpermissions, :roles => [:app] do 
-      if fetch(:file_permissions, 'permissive') == "strict" then
-        run "chmod -R 0754 #{release_path}"      
-        run "chmod -R 0755 #{release_path}/cron.sh"      
-        run "chmod -R 0775 #{release_path}/app/etc"        
-      else
-        run "chmod -R 0755 #{release_path}"      
-        run "chmod -R 0755 #{release_path}/cron.sh"      
-        run "chmod -R 0775 #{release_path}/app/etc"
-      end
-  end 
-  
-  desc 'Set all files and directories in the media directory to writable'
-  task :mediapermissions, :roles => [:app] do
-    run "find #{shared_path}/media -type d | xargs chmod 777"
-    run "find #{shared_path}/media -type f | xargs chmod 666"
-  end
-  
-  desc 'Symlink the shared magento folders'
-  task :symlink, :roles => :app do
-    #media.
-    run "rm -Rf #{release_path}/media"
-    run "ln -nfs #{shared_path}/media #{release_path}/media"
-
-    #var.
-    run "rm -Rf #{release_path}/var"
-    run "ln -nfs #{shared_path}/var  #{release_path}/var"
-    
-    fetch(:custom_shared_dirs, "").split(",").each do |link|
-      run "rm -rf #{latest_release}/#{link}"
-      run "ln -nfs #{shared_path}/#{link} #{latest_release}/#{link}"
-    end  
-    fetch(:custom_shared_files, "").split(",").each do |link|
-      run "rm -rf #{latest_release}/#{link}"
-      run "ln -s #{shared_path}/#{link} #{latest_release}/#{link}"
-    end
-
-    if remote_file_exists?("#{shared_path}/stats")
-        run "ln -nfs #{shared_path}/stats  #{release_path}/stats"    
-    end
-    
-  end
-
-  desc 'Copies stages configurations.'
-  task :setconfiguration, :roles => :app do
-    
-     if remote_file_exists?("#{shared_path}/config/app/etc/local.xml")
-          run "ln -nfs #{shared_path}/config/app/etc/local.xml #{release_path}/app/etc/local.xml"
-    end
-
-    #Copy the SER file for caching. This prevents the deploy from disabling caching.
-    if !remote_file_exists?("#{release_path}/app/etc/use_cache.ser")
-          run "ln -nfs #{shared_path}/config/app/etc/use_cache.ser #{release_path}/app/etc/"
-    end
-
-    #Copy htaccess config.
-    if remote_file_exists?("#{shared_path}/config/htaccess")
-        run "ln -nfs #{shared_path}/config/htaccess #{release_path}/.htaccess"
-    end
-    # htaccess backup plan.
-    if (!remote_file_exists?("#{release_path}/.htaccess") && remote_file_exists?("#{release_path}/.htaccess.sample"))
-        run "mv #{release_path}/.htaccess.sample #{release_path}/.htaccess"
-        run "rm -f #{release_path}/.htaccess.*"
-    end
-    
-    #Copy htpasswd config.
-    if remote_file_exists?("#{shared_path}/config/htpasswd")
-        run "ln -nfs #{shared_path}/config/htpasswd #{release_path}/.htpasswd"
-    end
-    
-    # Robots.txt
-    if remote_file_exists?("#{shared_path}/config/robots.txt")
-        run "ln -nfs #{shared_path}/config/robots.txt #{release_path}/robots.txt"
-    end
-  end
-
   desc 'Displays the builder public key for this machine and generates a new one if not found'
-  task :getsshpublickey, :roles => :app do
-    
-     if !remote_file_exists?("~/.ssh/id_rsa.pub")
-          run "ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa"
+  task :getsshpublickey, :roles => [:app] do
+    if !remote_file_exists?("~/.ssh/id_rsa.pub")
+      run "ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa"
     end
 
-     if remote_file_exists?("~/.ssh/id_rsa.pub")
-          run "cat ~/.ssh/id_rsa.pub"
+    if remote_file_exists?("~/.ssh/id_rsa.pub")
+      run "cat ~/.ssh/id_rsa.pub"
     end
-
   end
+  
+  desc 'Init Magento config file, folder'
+  task :init_files, :roles => [:app] do
+    # Backup config.xml
+    if remote_file_exists?("#{web_dir}/app/etc/local.xml")
+      run "cp -n #{web_dir}/app/etc/local.xml #{config_dir}"
+    end
 
+    if remote_file_exists?("#{web_dir}/var")
+      run "cp -Rn #{web_dir}/var #{config_dir}/"
+    else
+      run "mkdir -m 0777 #{config_dir}/var"
+    end
+    
+    if remote_file_exists?("#{upload_dir}/media.tgz")
+      run "tar -C #{config_dir} -xzf #{upload_dir}/media.tgz"
+    elsif remote_file_exists?("#{web_dir}/media")
+      run "cp -Rn #{web_dir}/media #{config_dir}/"
+    else
+      run "mkdir #{config_dir}/media"
+    end
+    run "chmod -R a+w #{config_dir}/media"
+  end
+  
+  desc 'Restore DB dump'
+  task :restore_db, :roles => [:app] do
+    if remote_file_exists?("#{upload_dir}/dump.sql.gz")
+      run "gunzip < #{upload_dir}/dump.sql.gz | mysql -h#{mysql_host} -u#{mysql_user} -p#{mysql_pass} #{mysql_db}"
+    end
+  end
+  
+  desc 'Update Magento configurations'
+  task :update_config, :roles => [:app] do
+    #Update local.xml with staging db info
+    localxml = "#{config_dir}/local.xml"
+    if remote_file_exists?(localxml)
+      run "sed -i -e 's@<host>.*<\/host>@<host><![CDATA[#{mysql_host}]]><\/host>@g' #{localxml}"
+      run "sed -i -e 's@<username>.*<\/username>@<username><![CDATA[#{mysql_user}]]><\/username>@g' #{localxml}"
+      run "sed -i -e 's@<password>.*<\/password>@<password><![CDATA[#{mysql_pass}]]><\/password>@g' #{localxml}"
+      run "sed -i -e 's@<dbname>.*<\/dbname>@<dbname><![CDATA[#{mysql_db}]]><\/dbname>@g' #{localxml}"
+    end    
+
+    #Update base_url in db with staging domain
+    domain = fetch(:domain, '')
+    if !domain.start_with?("http://")
+      domain = "http://#{domain}"
+    end
+    if !domain.end_with?("/")
+      domain = "#{domain}/"
+    end
+    run "mysql -h#{mysql_host} -u#{mysql_user} -p#{mysql_pass} #{mysql_db} -e\"UPDATE core_config_data SET value='#{domain}' WHERE path IN ('web/secure/base_url', 'web/unsecure/base_url')\""
+  end
+  
   desc 'Clear Magento cache.'
   task :clearcache, :roles => :app do
-    
-    if remote_file_exists?("#{current_path}/var/cache")
-      run "rm -rf #{current_path}/var/cache/*"
+    if remote_file_exists?("#{config_dir}/var/cache")
+      run "rm -rf #{config_dir}/var/cache/*"
     else
-      run "echo 'var/cache/ does not exist. Magento clearcache aborted.'"
+      logger.trace "var/cache/ does not exist. Magento clearcache aborted."
     end
-
   end
-
+  
 end
+

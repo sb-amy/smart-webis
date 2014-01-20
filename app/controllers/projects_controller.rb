@@ -64,7 +64,7 @@ class ProjectsController < ApplicationController
         
         @project.clone(@original) if load_clone_original
         
-        configurations = params[:project][:config_values]
+        configurations = params[:configurations][:values]
         project_config = Hash.new
         if(!configurations.empty?)
           lines = configurations.split("\n")

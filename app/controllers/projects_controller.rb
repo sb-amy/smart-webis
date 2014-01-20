@@ -71,12 +71,12 @@ class ProjectsController < ApplicationController
           lines.each { |line| 
               parts = line.split("=")
               if(parts.length >= 2)
-                project_config[parts[0].strip] = parts[1].strip 
+                project_config[:name] = parts[0].strip 
+                project_config[:value] = parts[1].strip
+                configuration = @project.configuration_parameters.build(project_config)
+                configuration.save
               end
           }
-          
-          @configuration = @project.configuration_parameters.build(project_config)
-          @configuration.save
         end
         
         flash[:notice] = 'Project was successfully created.'

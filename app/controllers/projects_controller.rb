@@ -64,6 +64,21 @@ class ProjectsController < ApplicationController
         
         @project.clone(@original) if load_clone_original
         
+        configurations = params[:configurations]
+        project_config = Hash.new
+        if(!configurations.empty?)
+          lines = configurations.split("\n")
+          lines.each { |line| 
+              parts = line.split("=")
+              if(parts.length >= 2)
+                project_config[parts[0].strip] = parts[1].strip 
+              end
+          }
+          
+          @configuration = @project.configuration_parameters.build(project_config)
+          @configuration.save
+        end
+        
         flash[:notice] = 'Project was successfully created.'
         format.html { redirect_to project_url(@project) }
         format.xml  { head :created, :location => project_url(@project) }

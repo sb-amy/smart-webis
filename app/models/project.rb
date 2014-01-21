@@ -10,7 +10,7 @@ class Project < ActiveRecord::Base
   validates_length_of :name, :maximum => 250
   validates_inclusion_of :template, :in => ProjectConfiguration.templates.keys
   
-  after_create :create_template_defaults
+  after_create :create_template_defaults, :add_default_stage
   
   attr_accessible :name, :description, :template, :project_config
   
@@ -29,6 +29,37 @@ class Project < ActiveRecord::Base
         end  
         config.save!
       end
+    end
+  end
+  
+  # add default stage to this project 
+  def add_default_stage
+    if self.project_config.has_key?("stage_name")
+      stage_name = self.project_config["stage_name"]
+      if stage_name.empty?
+        stage_name = "New Stage"
+      end
+      @stage = self.stages.build({:name => stage_name})
+      self.add_default_recipe
+      self.add_default_host
+      @stage.save
+    end
+  end
+  
+  def add_default_recipe
+    if self.project_config.has_key?("stage_recipe_ids")
+      @stage.recipe_ids = self.project_config["stage_recipe_ids"].split(",").map(&:strip)
+    end
+  end
+  
+  def add_default_host
+    if self.project_config.has_key?("role_host_id")
+      role_name = "app"
+      if self.project_config.has_key?("role_name")
+        role_name = self.project_config["role_name"]
+      end
+      role = @stage.roles.build({:host_id => self.project_config["role_host_id"], :name => role_name})
+      role.save
     end
   end
   

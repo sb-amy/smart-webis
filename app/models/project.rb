@@ -41,8 +41,8 @@ class Project < ActiveRecord::Base
       end
       @stage = self.stages.build({:name => stage_name})
       self.add_default_recipe
+      @stage.save!
       self.add_default_host
-      @stage.save
     end
   end
   
@@ -59,7 +59,7 @@ class Project < ActiveRecord::Base
         role_name = self.project_config["role_name"]
       end
       role = @stage.roles.build({:host_id => self.project_config["role_host_id"], :name => role_name})
-      role.save
+      role.save!
     end
   end
   

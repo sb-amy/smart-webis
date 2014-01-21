@@ -12,27 +12,16 @@ class Project < ActiveRecord::Base
   
   after_create :create_template_defaults
   
-  attr_accessible :name, :description, :template
+  attr_accessible :name, :description, :template, :project_config
   
   # creates the default configuration parameters based on the template
   def create_template_defaults
     unless template.blank?
-      configurations = params[:configurations][:values]
-      project_config = Hash.new
-      unless configurations.empty?
-        lines = configurations.split("\n")
-        lines.each { |line| 
-            parts = line.split("=")
-            if parts.length >= 2
-              project_config[parts[0].strip] = parts[1].strip 
-            end
-        }
-      end
       
       ProjectConfiguration.templates[template]::CONFIG.each do |k, v|
         config = self.configuration_parameters.build(:name => k.to_s, :value => v.to_s)
-        if project_config.has_key?(k.to_s)
-          config = self.configuration_parameters.build(:name => k.to_s, :value => project_config[k.to_s])
+        if self.project_config.has_key?(k.to_s)
+          config = self.configuration_parameters.build(:name => k.to_s, :value => self.project_config[k.to_s])
         end
 
         if k.to_sym == :application          

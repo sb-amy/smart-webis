@@ -53,6 +53,19 @@ class ProjectsController < ApplicationController
   def create
     @project = Project.new(params[:project])
     
+    configurations = params[:configurations][:values]
+    project_config = Hash.new
+    unless configurations.empty?
+      lines = configurations.split("\n")
+      lines.each { |line| 
+          parts = line.split("=")
+          if parts.length >= 2
+            project_config[parts[0].strip] = parts[1].strip 
+          end
+      }
+    end
+    @project.project_config = project_config
+    
     if load_clone_original
       action_to_render = 'clone'  
     else

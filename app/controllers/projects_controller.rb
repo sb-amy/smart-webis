@@ -64,7 +64,7 @@ class ProjectsController < ApplicationController
           end
       }
     end
-    @project.project_config = project_config
+    @project.write_attribute(:project_config, project_config)
     
     if load_clone_original
       action_to_render = 'clone'  

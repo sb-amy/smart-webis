@@ -2,22 +2,26 @@
 <%= render(:partial => 'layouts/menu_box', :locals => {
                                              :box_type => 'projects', 
                                              :status => controller_in_use_or(ProjectsController, :open, Project), 
-                                             :path => projects_path } )%>
+                                             :path => projects_path, 
+                                             :new_path => new_project } )%>
 
 <% if current_user.admin? %>
 <%= render(:partial => 'layouts/menu_box', :locals => {
                                              :box_type => 'hosts', 
                                              :status => controller_in_use_or(HostsController, :open, Host), 
-                                             :path => hosts_path } )%>
+                                             :path => hosts_path,
+                                             :new_path => new_host } )%>
 
 <%= render(:partial => 'layouts/menu_box', :locals => {
                                              :box_type => 'recipes', 
                                              :status => controller_in_use_or(RecipesController, :closed, Recipe), 
-                                             :path => recipes_path } )%>
+                                             :path => recipes_path,
+                                             :new_path => new_recipe } )%>
 
 <%= render(:partial => 'layouts/menu_box', :locals => {
                                              :box_type => 'users', 
                                              :status => controller_in_use_or(UsersController, :closed, User), 
-                                             :path => users_path } )%>
+                                             :path => users_path,
+                                             :new_path => new_user } )%>
 <%end%>
 

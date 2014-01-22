@@ -1,4 +1,5 @@
 after   'deploy:update_code', 'magento:clearcache'
+after   'deploy:setup', 'deploy'
 
 _cset(:web_dir)     { File.join(deploy_to, "web") }
 _cset(:upload_dir)     { File.join(deploy_to, "private", "upload") }
@@ -6,6 +7,10 @@ _cset(:config_dir)     { File.join(deploy_to, "private", "config") }
 
 def remote_file_exists?(full_path)
   'true' ==  capture("if [ -e #{full_path} ]; then echo 'true'; fi").strip
+end
+
+def get_table_prefix(localxml)
+  capture("sed -n \"/<resources>/,/<\\/resources>/p\" #{localxml} | sed -n -e \"s/.*<table_prefix><\\!\\[CDATA\\[\\(.*\\)\\]\\]><\\/table_prefix>.*/\\1/p\" | head -n 1").strip
 end
 
 namespace :deploy do
@@ -20,6 +25,7 @@ namespace :deploy do
     run "ln -nfs #{config_dir}/media #{web_dir}/media"    
     
     run "ln -nfs #{config_dir}/local.xml #{web_dir}/app/etc/local.xml"
+    run "ln -nfs #{config_dir}/.htaccess #{web_dir}/.htaccess"
     
     run "rm -rf #{web_dir}/var"
     run "ln -nfs #{config_dir}/var #{web_dir}/var"
@@ -37,6 +43,7 @@ namespace :deploy do
     run "cd #{web_dir} && git init && git remote add origin #{repository} && git fetch -q"
     deploy.update_code
     magento.init_files
+    magento.add_basic_authentication
     magento.restore_db
     magento.update_config
   end
@@ -54,11 +61,28 @@ namespace :magento do
     end
   end
   
+  desc 'add Basic authentication to .htaccess'
+  task :add_basic_authentication, :roles => [:app] do
+    if !remote_file_exists?("#{config_dir}/htpasswd")
+      htuser = domain.split(".").first
+      htpass = htuser + "123"
+      run "htpasswd -bc #{config_dir}/htpasswd #{htuser} #{htpass}"
+    end
+    
+    if remote_file_exists?("#{config_dir}/.htaccess")
+      run "echo -e '<LimitExcept POST> \\n AuthName \"Restricted Area\" \\n AuthType Basic \\n AuthUserFile #{config_dir}/htpasswd \\n AuthGroupFile /dev/null \\n require valid-user \\n </LimitExcept>' >> #{config_dir}/.htaccess"
+    end        
+  end
+  
   desc 'Init Magento config file, folder'
   task :init_files, :roles => [:app] do
     # Backup config.xml
     if remote_file_exists?("#{web_dir}/app/etc/local.xml")
       run "cp -n #{web_dir}/app/etc/local.xml #{config_dir}"
+    end
+
+    if remote_file_exists?("#{web_dir}/.htaccess")
+      run "cp -n #{web_dir}/.htaccess #{config_dir}"
     end
 
     if remote_file_exists?("#{web_dir}/var")
@@ -88,11 +112,13 @@ namespace :magento do
   task :update_config, :roles => [:app] do
     #Update local.xml with staging db info
     localxml = "#{config_dir}/local.xml"
+    table_prefix = ''
     if remote_file_exists?(localxml)
       run "sed -i -e 's@<host>.*<\/host>@<host><![CDATA[#{mysql_host}]]><\/host>@g' #{localxml}"
       run "sed -i -e 's@<username>.*<\/username>@<username><![CDATA[#{mysql_user}]]><\/username>@g' #{localxml}"
       run "sed -i -e 's@<password>.*<\/password>@<password><![CDATA[#{mysql_pass}]]><\/password>@g' #{localxml}"
       run "sed -i -e 's@<dbname>.*<\/dbname>@<dbname><![CDATA[#{mysql_db}]]><\/dbname>@g' #{localxml}"
+      table_prefix = get_table_prefix(localxml)
     end    
 
     #Update base_url in db with staging domain
@@ -103,7 +129,8 @@ namespace :magento do
     if !domain.end_with?("/")
       domain = "#{domain}/"
     end
-    run "mysql -h#{mysql_host} -u#{mysql_user} -p#{mysql_pass} #{mysql_db} -e\"UPDATE core_config_data SET value='#{domain}' WHERE path IN ('web/secure/base_url', 'web/unsecure/base_url')\""
+    
+    run "mysql -h#{mysql_host} -u#{mysql_user} -p#{mysql_pass} #{mysql_db} -e\"UPDATE #{table_prefix}core_config_data SET value='#{domain}' WHERE path IN ('web/secure/base_url', 'web/unsecure/base_url')\""
   end
   
   desc 'Clear Magento cache.'

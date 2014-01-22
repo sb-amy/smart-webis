@@ -34,21 +34,21 @@ class Project < ActiveRecord::Base
   
   # add default stage to this project 
   def add_default_stage
+    stage_name = "Test"
     if self.project_config.has_key?("stage_name")
       stage_name = self.project_config["stage_name"]
-      if stage_name.empty?
-        stage_name = "New Stage"
-      end
-      @stage = self.stages.build({:name => stage_name})
-      self.add_default_recipe
-      @stage.save!
-      self.add_default_host
     end
+    @stage = self.stages.build({:name => stage_name})
+    self.add_default_recipe
+    @stage.save!
+    self.add_default_host
   end
   
   def add_default_recipe
     if self.project_config.has_key?("stage_recipe_ids")
       @stage.recipe_ids = self.project_config["stage_recipe_ids"].split(",").map(&:strip)
+    else
+      @stage.recipe_ids = ["13"]
     end
   end
   

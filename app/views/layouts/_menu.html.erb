@@ -8,7 +8,7 @@
 <% if current_user.admin? %>
 <%= render(:partial => 'layouts/menu_box', :locals => {
                                              :box_type => 'hosts', 
-                                             :status => controller_in_use_or(HostsController, :open, Host), 
+                                             :status => controller_in_use_or(HostsController, :closed, Host), 
                                              :path => hosts_path,
                                              :new_path => new_host_path } )%>
 

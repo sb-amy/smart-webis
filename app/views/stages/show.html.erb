@@ -4,7 +4,7 @@
    <% if current_user.admin? %>
    <p><%= link_to 'Init', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy:init', :class => 'arrow_link' %></p>
    <p><%= link_to 'Setup', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy:setup', :class => 'arrow_link' %></p>
-   <p>&nbsp;</p>
+   <p></p>
    <p><%= link_to 'Deploy', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy', :class => 'arrow_link' %></p>
    <p>
      <%= select_tag('task', options_for_select(@task_list)) %>

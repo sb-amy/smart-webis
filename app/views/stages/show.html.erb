@@ -2,10 +2,10 @@
   <div class="special_box_top"></div>
   <div class="special_box_middle deployments_box">
    <% if current_user.admin? %>
-   <p><%= link_to 'Deploy', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy', :class => 'arrow_link' %></p>
-   <p><%= link_to 'Deploy and migrate', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy:migrations', :class => 'arrow_link' %></p>
-   <p><%= link_to 'Restart app servers', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy:restart', :class => 'arrow_link' %></p>
+   <p><%= link_to 'Init', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy:init', :class => 'arrow_link' %></p>
    <p><%= link_to 'Setup', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy:setup', :class => 'arrow_link' %></p>
+   <p>&nbsp;</p>
+   <p><%= link_to 'Deploy', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy', :class => 'arrow_link' %></p>
    <p>
      <%= select_tag('task', options_for_select(@task_list)) %>
    </p>
@@ -17,7 +17,6 @@
    </p>
    <%else%>
    <p><%= link_to 'Deploy', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy', :class => 'arrow_link' %></p>
-   <p><%= link_to 'Rollback', new_project_stage_deployment_path(current_project, @stage) + '?task=deploy:rollback', :class => 'arrow_link' %></p>
    <%end%>
     </div>
   <div class="special_box_bottom"></div>

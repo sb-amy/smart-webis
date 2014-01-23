@@ -31,6 +31,13 @@ class DeploymentsController < ApplicationController
   def new
     @deployment = @stage.deployments.new
     @deployment.task = params[:task]
+    
+    @diff = ''
+    if @deployment.task == 'deploy' && current_project.configuration_parameters[:scm].to_s == 'git'
+      config = instantiate_configuration
+      config.load 'deploy'
+      @diff = revision
+    end
 
     # Allow description to be passed in via a URL parameter
     @deployment.description = params[:description]

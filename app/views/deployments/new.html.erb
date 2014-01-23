@@ -8,15 +8,26 @@
 
 <% form_for(:deployment, :url => project_stage_deployments_path(@project, @stage)) do |f| %>
 <div style="width:330px;">
-  <p>
+  <p style="display: none">
     <b>Task</b><br />
     <%= f.text_field :task, :style => 'width:330px;' %>
   </p>
   
-  <p>
+  <p style="display: none">
     <b>Comment</b><br />
     <%= f.text_area :description, :style => 'width:330px;height:80px;' %>
   </p>
+  
+  <% if @deployment[:task] == 'deploy' %>
+  	<p>
+	<b>Changes to be deployed:</b><br />
+  	<% unless @diff.empty?%>
+  		<%= @diff%>
+  	<% else %>
+  		<h3>There is nothing new to deploy</h3>
+  	<% end %>
+  	</p>
+  <% end %>  
   
   <% unless @stage.prompt_configurations.empty? %>
     <% @stage.prompt_configurations.each do |conf| %>
@@ -130,5 +141,5 @@
 
 <% content_for(:page_title) do %>
   <% @page_title = "Deploy stage #{h(current_stage.name)} of project #{h(current_project.name)}" %>
-  <h2>Deployment</h2>
+  <h2>Task: <%= @deployment[:task]%></h2>
 <% end %>

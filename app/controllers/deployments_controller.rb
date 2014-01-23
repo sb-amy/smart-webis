@@ -33,7 +33,7 @@ class DeploymentsController < ApplicationController
     @deployment.task = params[:task]
     
     @diff = ''
-    if @deployment.task == 'deploy' && current_project.configuration_parameters[:scm].to_s == 'git'
+    if @deployment.task == 'deploy' && @stage.effective_configuration(:scm).to_s == 'git'
       config = instantiate_configuration
       config.load 'deploy'
       @diff = revision

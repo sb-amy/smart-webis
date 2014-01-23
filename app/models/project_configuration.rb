@@ -9,12 +9,12 @@ class ProjectConfiguration < ConfigurationParameter
     {
       'magento_quick' => Webistrano::Template::MagentoQuick,
       'magento' => Webistrano::Template::Magento,
-      'rails' => Webistrano::Template::Rails,
-      'mongrel_rails' => Webistrano::Template::MongrelRails,
-      'thin_rails' => Webistrano::Template::ThinRails,   
-      'mod_rails' => Webistrano::Template::ModRails,
-      'pure_file' => Webistrano::Template::PureFile,
-      'unicorn' => Webistrano::Template::Unicorn
+#      'rails' => Webistrano::Template::Rails,
+#      'mongrel_rails' => Webistrano::Template::MongrelRails,
+#      'thin_rails' => Webistrano::Template::ThinRails,   
+#      'mod_rails' => Webistrano::Template::ModRails,
+#      'pure_file' => Webistrano::Template::PureFile,
+#      'unicorn' => Webistrano::Template::Unicorn
     }
   end
   

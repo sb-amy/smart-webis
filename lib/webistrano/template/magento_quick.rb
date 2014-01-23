@@ -4,7 +4,6 @@ module Webistrano
       
       CONFIG = Webistrano::Template::Base::CONFIG.dup.merge({
         :application => 'your_app_name',
-        :copy_exclude => '.git',
         :scm => ':git',
         :deploy_via => ':git_pull',
         :branch => 'master',

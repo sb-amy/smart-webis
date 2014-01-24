@@ -25,7 +25,7 @@
 	    <b>Changes to be deployed:</b><br />
 	  	<% unless @diff.empty?%>
 	  		<% @deployment[:description] = @diff %>
-	  		<%= f.text_area :description, :style => 'width:600px;height:200px;' %>
+	  		<%= f.text_area :description, :style => 'width:600px;height:200px;', :readonly => 'readonly' %>
 	  	<% else %>
 	  		<h3>There is nothing new to deploy</h3>
 	  	<% end %>

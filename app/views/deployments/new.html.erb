@@ -7,27 +7,41 @@
 <% flashed_errors(:deployment) %>
 
 <% form_for(:deployment, :url => project_stage_deployments_path(@project, @stage)) do |f| %>
+    <b>Deploying hosts:</b><br/>
+	<% if @stage.roles.count > 0 %>
+		<ul>
+		<% for host in @stage.hosts.sort_by{|x| x.name} %>
+			<li><%= h host.name %></li>
+		<% end %>
+		</ul>
+	<% else %>
+		No hosts for this stage!
+	<% end %>
+	<br />
+
+  <% if @deployment[:task] == 'deploy' %>
+	<div style="width:660px;">
+	  <p>
+	    <b>Changes to be deployed:</b><br />
+	  	<% unless @diff.empty?%>
+	  		<% @deployment[:description] = @diff %>
+	  		<%= f.text_area :description, :style => 'width:600px;height:200px;' %>
+	  	<% else %>
+	  		<h3>There is nothing new to deploy</h3>
+	  	<% end %>
+	  </p>
+	</div>
+  <% else %>
+  	<div style="display: none;">
+		<%= f.text_area :description, :style => 'width:600px;height:200px;' %>
+	</div>
+  <% end %>
+  
 <div style="width:330px;">
   <p style="display: none">
     <b>Task</b><br />
     <%= f.text_field :task, :style => 'width:330px;' %>
   </p>
-  
-  <p style="display: none">
-    <b>Comment</b><br />
-    <%= f.text_area :description, :style => 'width:330px;height:80px;' %>
-  </p>
-  
-  <% if @deployment[:task] == 'deploy' %>
-  	<p>
-	<b>Changes to be deployed:</b><br />
-  	<% unless @diff.empty?%>
-  		<%= @diff%>
-  	<% else %>
-  		<h3>There is nothing new to deploy</h3>
-  	<% end %>
-  	</p>
-  <% end %>  
   
   <% unless @stage.prompt_configurations.empty? %>
     <% @stage.prompt_configurations.each do |conf| %>
@@ -97,7 +111,7 @@
 <% end %>
 
 <% content_for(:action_box) do %>
-<div class="small_box">
+<div class="small_box" style="display: none">
   <div class="small_box_top"></div>
   <div class="small_box_middle" style="min-height: 140px; *height: 160px;">
 		 <h3>Deploying hosts</h3>
@@ -141,5 +155,5 @@
 
 <% content_for(:page_title) do %>
   <% @page_title = "Deploy stage #{h(current_stage.name)} of project #{h(current_project.name)}" %>
-  <h2>Task: <%= @deployment[:task]%></h2>
+  <h2>Task: [<%= @deployment[:task]%>]</h2>
 <% end %>

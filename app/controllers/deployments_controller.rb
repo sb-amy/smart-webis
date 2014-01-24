@@ -32,19 +32,34 @@ class DeploymentsController < ApplicationController
     @deployment = @stage.deployments.new
     @deployment.task = params[:task]
     
-    @diff = ''
-    if @deployment.task == 'deploy' && @stage.effective_configuration(:scm).to_s == 'git'
-      config = instantiate_configuration
-      config.load 'deploy'
-      @diff = revision
-    end
-
     # Allow description to be passed in via a URL parameter
     @deployment.description = params[:description]
     
     if params[:repeat]
       @original = @stage.deployments.find(params[:repeat])
       @deployment = @original.repeat
+    end
+    
+    @diff = ''
+    if @deployment.task == 'deploy' && @stage.effective_configuration(:scm).value.to_s == ':git'
+      deployer = Webistrano::Deployer.new(@deployment)
+      config = deployer.instantiate_configuration
+      config.load 'deploy'
+      deployer.set_pre_vars(config)
+      deployer.set_stage_configuration(config)
+      web_dir = config.fetch(:deploy_to) + "/web"
+      origin = config.source.origin
+      branch = config.fetch(:branch)
+      begin      
+        @diff = config.capture("cd #{web_dir} && git fetch #{origin} && git log --oneline HEAD..#{origin}/#{branch}", {:hosts => @stage.hosts.first.name})
+        @diff.strip!
+        unless @diff.empty?
+          @diff = "===== Commits ===== \n" + @diff + "\n\n===== Changed files =====\n"
+          @diff += config.capture("cd #{web_dir} && git diff --name-status HEAD..#{origin}/#{branch}", {:hosts => @stage.hosts.first.name})        
+        end
+      rescue => e
+        flash[:error] = "Unexpected error happened: #{e.message}"
+      end
     end
   end
 

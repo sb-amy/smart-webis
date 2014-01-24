@@ -25,7 +25,7 @@ module Webistrano
       
       DESC = <<-'EOS'
         Template for use with Magento projects in SmartOSC.
-        This template use git pull stragegy for quick deployment, so there will be NO rollback.
+        This template use git pull strategy for quick deployment, so there will be NO rollback.
       EOS
       
       TASKS = Webistrano::Template::Base::TASKS + <<-'EOS'

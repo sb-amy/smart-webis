@@ -41,7 +41,7 @@ class DeploymentsController < ApplicationController
     end
     
     @diff = ''
-    if @deployment.task == 'deploy' && @stage.effective_configuration(:scm).value.to_s == ':git'
+    if @deployment.task == 'deploy' && @stage.effective_configuration(:deploy_via).value.to_s == ':git_pull'
       deployer = Webistrano::Deployer.new(@deployment)
       config = deployer.instantiate_configuration
       config.load 'deploy'
